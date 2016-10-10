@@ -28,6 +28,9 @@ services:
   logstash:
     container_name: logstash
     image: logstash
+    ports:
+      - 12201:12201
+      - 12201:12201/udp
     expose:
       - 5044
       - 12201/udp
