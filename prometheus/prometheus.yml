@@ -24,24 +24,41 @@ scrape_configs:
     scrape_interval: 10s
     scrape_timeout: 5s
     static_configs:
-      - targets: ['nodeexporter:9100']
-        labels: {'host': 'Eisbach'}
+      - targets: ['52.37.91.86:9100']
+        labels: {'group': 'production'}
 
   - job_name: 'containers'
+    scrape_interval: 5s
+    scrape_timeout: 4s
+    static_configs:
+      - targets: ['52.37.91.86:8080']
+        labels:
+          group: 'production'
+
+  - job_name: 'node_development'
     scrape_interval: 10s
     scrape_timeout: 5s
     static_configs:
-      - targets: ['cadvisor:8080']
-        labels: {'host': 'Eisbach'}
+      - targets: ['54.71.126.189:9100']
+        labels: {'group': 'development'}
+
+  - job_name: 'containers_development'
+    scrape_interval: 5s
+    scrape_timeout: 4s
+    static_configs:
+      - targets: ['54.71.126.189:8080']
+        labels:
+          group: 'development'
+
 
   #Will/23.08.16: dcom restart prometheus suffices to load config/rule changes
 
-  - job_name: 'prometheus-server'
-    scrape_interval: 10s
-    scrape_timeout: 5s
-    static_configs:
-      - targets: ['localhost:9090']
-        labels: {'host': 'Eisbach'}
+#  - job_name: 'prometheus-server'
+#    scrape_interval: 10s
+#    scrape_timeout: 5s
+#    static_configs:
+#      - targets: ['localhost:9090']
+#        labels: {'host': 'Eisbach'}
 
   # - job_name: 'couchdb'
   #   scrape_interval: 10s
