@@ -9,9 +9,18 @@ services:
 
   # Runs on your node(s) and forwards node(host) metrics to Prometheus.
   master-nodeexporter:
-    image: prom/node-exporter:v0.14.0
+    image: prom/node-exporter:v0.15.2
     expose:
       - 9100
+    volumes:
+      - /proc:/host/proc:ro
+      - /proc/1/net/dev:/host/proc/net/dev:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)"'
     restart: always
     labels:
       container_group: monitoring
