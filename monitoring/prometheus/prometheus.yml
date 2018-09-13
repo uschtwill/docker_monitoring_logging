@@ -1,7 +1,7 @@
 # my global config
 global:
-  scrape_interval:     10s # By default, scrape targets every 15 seconds.
-  evaluation_interval: 10s # By default, scrape targets every 15 seconds.
+  scrape_interval:     15s # By default, scrape targets every 15 seconds.
+  evaluation_interval: 15s # By default, scrape targets every 15 seconds.
   # scrape_timeout is set to the global default (10s).
 
   # Attach these labels to any time series or alerts when communicating with
@@ -21,54 +21,19 @@ rule_files:
 scrape_configs:
   # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
 
-  - job_name: 'netdata'
-
-    metrics_path: /api/v1/allmetrics
-    params:
-      format: [prometheus]
-#    honor_labels: true
+  - job_name: 'node'
+    scrape_interval: 10s
+    scrape_timeout: 5s
     static_configs:
-      - targets: ['netdata:19999']
-    metric_relabel_configs:
-      - source_labels: [chart]
-        regex: cgroup_(.+)_(.+_.+)\..*
-        target_label: container_group
-        replacement: '$1'
+      - targets: ['master-nodeexporter:9100']
+        labels: {'host': 'host1'}
 
-      - source_labels: [chart]
-        regex: cgroup_(.+)_(.+_.+)\..*
-        target_label: container_name
-        replacement: '$2'
-      
-#      - source_labels: [__name__]
-#        regex: (.*)
-#        replacement: ${1}
-#        target_label: container_name
-
-
-  # - job_name: 'node'
-  #   scrape_interval: 10s
-  #   scrape_timeout: 5s
-  #   static_configs:
-  #     - targets: ['master-nodeexporter:9100']
-  #       labels: {'host': 'host1'}
-
-  # - job_name: 'containers'
-  #   scrape_interval: 10s
-  #   scrape_timeout: 5s
-  #   static_configs:
-  #     - targets: ['master-cadvisor:8080']
-  #       labels: {'host': 'host1'}
-
-  # - job_name: 'job-count'
-  #   scrape_interval: 10s
-  #   scrape_timeout: 5s
-  #   metrics_path: /services/admin/metrics
-  #   static_configs:
-  #     - targets: ['dev-backend-mypos:1337']
-  #       labels: {'host': 'host1'}
-
-# http://myposdev.vallab.ru/services/metrics
+  - job_name: 'containers'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['master-cadvisor:8080']
+        labels: {'host': 'host1'}
 
   #Will/23.08.16: dcom restart prometheus suffices to load config/rule changes
 
@@ -80,33 +45,32 @@ scrape_configs:
         labels: {'host': 'host1'}
 
   # see https://github.com/prometheus/blackbox_exporter relabel 
-  # - job_name: 'service'
-  #   scrape_interval: 10s
-  #   scrape_timeout: 10s
-  #   metrics_path: /probe
-  #   # if your target is https, you either need to install cert in blackbox proble container
-  #   # or add below line to ignore verify
-  #   # tls_config:
-  #   #  insecure_skip_verify: true
-  #   params:
-  # #    module: [http_2xx]  # Look for a HTTP 200 response. 
-  #     module: [icmp]  # Look for a ping.
-  #   file_sd_configs:
-  #     - files:
-  #       - /etc/prometheus/service.yml
-  #   relabel_configs:
-  #     - source_labels: [__address__]
-  #       regex: (.*)
-  #       target_label: __param_target
-  #       replacement: ${1}
-  #     - source_labels: [__address__]
-  #       regex: (.*)
-  #       target_label: service_url
-  #       replacement: ${1}
-  #     - source_labels: []
-  #       regex: .*
-  #       target_label: __address__
-  #       replacement: blackboxprober:9115
+  - job_name: 'service'
+    scrape_interval: 60s
+    scrape_timeout: 15s
+    metrics_path: /probe
+    # if your target is https, you either need to install cert in blackbox proble container
+    # or add below line to ignore verify
+    # tls_config:
+    #  insecure_skip_verify: true
+    params:
+      module: [http_2xx]  # Look for a HTTP 200 response. 
+    file_sd_configs:
+      - files:
+        - /etc/prometheus/service.yml
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: (.*)
+        target_label: __param_target
+        replacement: ${1}
+      - source_labels: [__address__]
+        regex: (.*)
+        target_label: service_url
+        replacement: ${1}
+      - source_labels: []
+        regex: .*
+        target_label: __address__
+        replacement: blackboxprober:9115
 
   # - job_name: 'couchdb'
   #   scrape_interval: 10s
