@@ -9,9 +9,18 @@ services:
 
   # Runs on your node(s) and forwards node(host) metrics to Prometheus.
   master-nodeexporter:
-    image: prom/node-exporter:v0.14.0
+    image: prom/node-exporter:v0.15.2
     expose:
       - 9100
+    volumes:
+      - /proc:/host/proc:ro
+      - /proc/1/net/dev:/host/proc/net/dev:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points="^/(sys|proc|dev|host|etc)($$|/)"'
     restart: always
     labels:
       container_group: monitoring
@@ -46,7 +55,7 @@ services:
 
   # Storage and search backend. Gets all metrics from cAdvisor and Nodeexporter and is the backend that Grafana runs on.
   prometheus:
-    image: prom/prometheus:v1.7.1
+    image: prom/prometheus:v2.3.2
     expose:
       - 9090
     volumes:
@@ -57,14 +66,13 @@ services:
       - ./prometheus:/etc/prometheus
     restart: always
     command:
-      - "-config.file=/etc/prometheus/prometheus.yml"
-      - "-storage.local.path=/prometheus"
-      - "-web.console.libraries=/etc/prometheus/console_libraries"
-      - "-web.console.templates=/etc/prometheus/consoles"
-      - "-web.listen-address=:9090"
-      - "-alertmanager.url=http://alertmanager:9093"
-      - "-storage.local.memory-chunks=300000"
-      - "-storage.local.retention=744h"
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--query.lookback-delta=25s"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--web.listen-address=:9090"
+      - "--storage.tsdb.retention=744h"
     labels:
       container_group: monitoring
     logging:
