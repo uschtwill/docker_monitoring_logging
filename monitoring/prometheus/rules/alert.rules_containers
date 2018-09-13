@@ -1,45 +1,41 @@
+groups:
+- name: containers
+  rules:
+  - alert: high_cpu_usage_on_container
+    expr: sum(rate(container_cpu_usage_seconds_total{name=~".+"}[5m])) by (name,host) * 100 > 50
+    for: 5m
+    annotations:
+      summary: "HIGH CPU USAGE WARNING: CONTAINER '{{ $labels.name }}' on '{{ $labels.host }}'"
+      description: "{{ $labels.name }} is using a LOT of CPU. CPU usage is {{ humanize $value}}%."
+  
+  - alert: elasticsearch_eating_memory
+    expr: sum(container_memory_rss{name=~"logging_elasticsearch_1"}) by (host, name) > 1200000000
+    for: 5m
+    annotations: 
+      summary: "HIGH MEMORY USAGE WARNING: CONTAINER '{{ $labels.name }}' on '{{ $labels.host }}'"
+      description: "{{ $labels.name }} is eating up a LOT of memory. Memory consumption of {{ $labels.name }} is at {{ humanize $value}}."
 
-ALERT high_cpu_usage_on_container
-  IF sum(rate(container_cpu_usage_seconds_total{name=~".+"}[5m])) by (name,host) * 100 > 50
-  FOR 5m
-  ANNOTATIONS {
-      summary = "HIGH CPU USAGE WARNING: CONTAINER '{{ $labels.name }}' on '{{ $labels.host }}'",
-      description = "{{ $labels.name }} is using a LOT of CPU. CPU usage is {{ humanize $value}}%.",
-  }
+  - alert: prometheus_eating_memory
+    expr: sum(container_memory_rss{name=~"monitoring_prometheus_1"}) by (host, name) > 1200000000
+    for: 5m
+    annotations:
+      summary: "HIGH MEMORY USAGE WARNING: CONTAINER '{{ $labels.name }}' on '{{ $labels.host }}'"
+      description: "{{ $labels.name }} is eating up a LOT of memory. Memory consumption of {{ $labels.name }} is at {{ humanize $value}}."
 
-ALERT elasticsearch_eating_memory
-  IF sum(container_memory_rss{name=~"logging_elasticsearch_1"}) by (host, name) > 1200000000
-  FOR 5m
-  ANNOTATIONS {
-      summary = "HIGH MEMORY USAGE WARNING: CONTAINER '{{ $labels.name }}' on '{{ $labels.host }}'",
-      description = "{{ $labels.name }} is eating up a LOT of memory. Memory consumption of {{ $labels.name }} is at {{ humanize $value}}.",
-  }
+  - alert: container_eating_memory
+    expr: sum(container_memory_rss{name=~".+",name!="logging_elasticsearch_1",name!="monitoring_prometheus_1"}) by (host,name) > 700000000
+    for: 5m
+    annotations: 
+      summary: "HIGH MEMORY USAGE WARNING: CONTAINER '{{ $labels.name }}' on '{{ $labels.host }}'"
+      description: "{{ $labels.name }} is eating up a LOT of memory. Memory consumption of {{ $labels.name }} is at {{ humanize $value}}."
 
-ALERT prometheus_eating_memory
-  IF sum(container_memory_rss{name=~"monitoring_prometheus_1"}) by (host, name) > 1200000000
-  FOR 5m
-  ANNOTATIONS {
-      summary = "HIGH MEMORY USAGE WARNING: CONTAINER '{{ $labels.name }}' on '{{ $labels.host }}'",
-      description = "{{ $labels.name }} is eating up a LOT of memory. Memory consumption of {{ $labels.name }} is at {{ humanize $value}}.",
-  }
-
-ALERT container_eating_memory
-  IF sum(container_memory_rss{name=~".+",name!="logging_elasticsearch_1",name!="monitoring_prometheus_1"}) by (host,name) > 700000000
-  FOR 5m
-  ANNOTATIONS {
-      summary = "HIGH MEMORY USAGE WARNING: CONTAINER '{{ $labels.name }}' on '{{ $labels.host }}'",
-      description = "{{ $labels.name }} is eating up a LOT of memory. Memory consumption of {{ $labels.name }} is at {{ humanize $value}}.",
-  }
-
-
-ALERT container_down
-IF (absent(container_memory_usage_bytes{name="logging_elasticsearch_1"})
-  or absent(container_memory_usage_bytes{name="monitoring_prometheus_1"}) 
-  )
-  FOR 5m
-  LABELS { severity = "Critical" }
-  ANNOTATIONS {
-    summary= "CONTAINER '{{ $labels.name }}' down",
-    description =  "container with  name '{{ $labels.name }}' is down for more than 5 minutes"
-  }
+  - alert: container_down
+    expr: (absent(container_memory_usage_bytes{name="logging_elasticsearch_1"}) or absent(container_memory_usage_bytes{name="monitoring_prometheus_1"}))
+    for: 5m
+    labels: 
+      severity: Critical
+    annotations: 
+      summary: "CONTAINER '{{ $labels.name }}' down"
+      description: "container with  name '{{ $labels.name }}' is down for: more than 5 minutes"
+  
 
